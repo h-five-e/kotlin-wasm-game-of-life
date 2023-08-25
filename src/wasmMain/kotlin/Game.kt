@@ -1,5 +1,4 @@
 import org.khronos.webgl.Uint16Array
-import org.khronos.webgl.Uint8ClampedArray
 import kotlin.time.measureTime
 
 abstract class Game<T> protected constructor(
@@ -10,11 +9,12 @@ abstract class Game<T> protected constructor(
 ) {
     protected val size = width * height
 
-    protected var data = List(size)  {
+    protected var data = MutableList(size)  {
         val x = it % width
         val y = (it - x) / width
         initializer(x,y)
     }
+    private var newData = MutableList(size) { initializer(0, 0) } // todo: how to initialize as empty list?
 
     private val kernelIndices = List(size) {
         val x = it % width
@@ -40,10 +40,13 @@ abstract class Game<T> protected constructor(
 
     fun step() {
         val timeTaken = measureTime {
-            val newData = List(size) {
-                this.update(this.data[it], this.getKernel(it))
+            for (i in 0..<this.data.size) {
+                this.newData[i] = this.update(this.data[i], this.getKernel(i))
             }
-            this.data = newData
+
+            val swap = this.data
+            this.data = this.newData
+            this.newData = swap
         }
         println(timeTaken)
     }
